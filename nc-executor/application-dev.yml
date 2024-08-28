@@ -2,6 +2,8 @@ application:
   name: nc-executor
 apps:
   version: 1.0
+
+spring:
   mail:
     #    host: 000.000.000.000
     host: 212.118.156.124
