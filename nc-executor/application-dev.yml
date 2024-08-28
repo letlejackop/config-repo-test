@@ -5,8 +5,8 @@ apps:
 
 spring:
   mail:
-    #    host: 000.000.000.000
-    host: 212.118.156.124
+    host: 000.000.000.000
+    # host: 212.118.156.124
   docker:
     compose:
       lifecycle-management: start-only
