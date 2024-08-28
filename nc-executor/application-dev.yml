@@ -1,3 +1,8 @@
+application:
+  name: nc-executor
+apps:
+  version: 1.0
+
 docker:
   registry: cicd-tooling-ce.stc.com.sa
   image:
@@ -37,8 +42,72 @@ fluentbitconf:
 sidecar:
   jaegertracing: false
   istio: false
-application:
-  name: nc-executor
+
+binder:
+  configuration:
+    commit_interval_ms: 100
+
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  mail:
+    host: 212.118.156.124
+  application:
+    name: executor
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    username: user
+    password: password
+    url: jdbc:mysql://ip:port/db
+    hikari:
+      idle_timeout: 10000
+      minimum_idle: 0
+  kafka:
+    error-handler: kafkaErrorHandler
+    bootstrap_servers: http://10.23.51.48:9091,10.23.51.48:9092,10.23.51.62:9091,10.23.51.62:9092,10.23.51.49:9091,10.23.51.49:9092,10.23.58.52:9091,10.23.58.52:9092
+    properties:
+      schema:
+        registry:
+          key: schema.registry.url
+          url: http://10.23.51.77:8091,10.23.58.35:8091
+    consumer:
+      group_id: notification_consumer
+      max-poll-records: 10
+      auto-commit: false
+      avro-reader-flag: true
+      properties:
+        logging:
+          enabled: true
+    auto-offset-reset: latest
+    producer:
+      properties:
+        auto-register-schema: false
+        logging:
+          enabled: false
+        topics-name:
+          pn:
+            backend-response-success: stc.nc.queing.response.ackpn
+            backend-response-failed: stc.nc.queing.error.ackpn-dlq
+          sms:
+            backend-response-success: stc.nc.queing.response.acksms
+            backend-response-failed: stc.nc.queing.error.acksms-dlq
+          validation:
+            rejected-reason: stc.nc.queing.reject
+
+
+jpa:
+  open-in-view: false
+  hibernate:
+    ddl-auto: none
+  properties:
+    hibernate:
+      dialect: org.hibernate.dialect.MySQL5Dialect
+security:
+  user:
+    name: msuser
+    password: password
 management:
   server:
     port: 8080
@@ -48,126 +117,54 @@ management:
     readinessProbe:
       periodSeconds: 60
       timeoutSeconds: 120
+  health:
+  info.git.mode: full
   endpoints:
-    web:
-      include: health
-binder:
-  configuration:
-    commit_interval_ms: 100
+    web.exposure.include: health, metrics, info
+  endpoint:
+    health.show.details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+enable:
+  ms-authorization:
+    filter: true
+logging:
+  level:
+    sa.com.stc.bau.framework.filter.LoggingFilter: DEBUG
+    com_stc: DEBUG
+webclient:
+  sms:
+    baseUri: http://172.20.150.69:9500/smsgw/sendSMS
+    connectTimeout: 30s # in seconds
+  pn:
+    baseUri: http://172.20.150.69:9700/dngw/sendPushNotify
+    connectTimeout: 30s # in seconds
+  retry:
+    backoffDelay: 30s # in seconds
+    maxAttempts: 3
+elastic:
+  apm:
+    enabled: true
+    server_url: https://sit-elastic.stc.com.sa:8200
+    service_name: nc-executor
+    environment: DEV
+    application_packages: sa.com.stc.nc.executor
+    log_level: CRITICAL
+    verify_server_cert: false
+    api_key: Zk9OamhJb0JNSkwtaFhsMmJ4Mnc6cFFHUUhjZ0JTR21mRENNNW9IeUhUUQ==
 
-config:
-  application:
-    security:
-      exclusions: /v3/api-docs/**, /swagger*/**, /actuator/**
-  spring:
-    threads:
-      virtual:
-        enabled: true
-    mail:
-      host: 212.118.156.124
-    application:
-      name: executor
-    datasource:
-      driverClassName: com.mysql.cj.jdbc.Driver
-      username: user
-      password: password
-      url: jdbc:mysql://ip:port/db
-      hikari:
-        idle_timeout: 10000
-        minimum_idle: 0
-    kafka:
-      error-handler: kafkaErrorHandler
-      bootstrap_servers: http://10.23.51.48:9091,10.23.51.48:9092,10.23.51.62:9091,10.23.51.62:9092,10.23.51.49:9091,10.23.51.49:9092,10.23.58.52:9091,10.23.58.52:9092
-      properties:
-        schema:
-          registry:
-            key: schema.registry.url
-            url: http://10.23.51.77:8091,10.23.58.35:8091
-      consumer:
-        group_id: notification_consumer
-        max-poll-records: 10
-        auto-commit: false
-        avro-reader-flag: true
-        properties:
-          logging:
-            enabled: true
-      auto-offset-reset: latest
-      producer:
-        properties:
-          auto-register-schema: false
-          logging:
-            enabled: false
-          topics-name:
-            pn:
-              backend-response-success: stc.nc.queing.response.ackpn
-              backend-response-failed: stc.nc.queing.error.ackpn-dlq
-            sms:
-              backend-response-success: stc.nc.queing.response.acksms
-              backend-response-failed: stc.nc.queing.error.acksms-dlq
-            validation:
-              rejected-reason: stc.nc.queing.reject
-
-
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: none
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL5Dialect
-  security:
-    user:
-      name: msuser
-      password: password
-  management:
-    health:
-    info.git.mode: full
-    endpoints:
-      web.exposure.include: health, metrics, info
-    endpoint:
-      health.show.details: always
-    metrics:
-      distribution:
-        percentiles-histogram:
-          http.server.requests: true
-  springdoc:
-    api-docs:
-      enabled: true
-    swagger-ui:
-      enabled: true
-  enable:
-    ms-authorization:
-      filter: true
-  logging:
-    level:
-      sa.com.stc.bau.framework.filter.LoggingFilter: DEBUG
-      com_stc: DEBUG
-  webclient:
-    sms:
-      baseUri: http://172.20.150.69:9500/smsgw/sendSMS
-      connectTimeout: 30s # in seconds
-    pn:
-      baseUri: http://172.20.150.69:9700/dngw/sendPushNotify
-      connectTimeout: 30s # in seconds
-    retry:
-      backoffDelay: 30s # in seconds
-      maxAttempts: 3
-  elastic:
-    apm:
-      enabled: true
-      server_url: https://sit-elastic.stc.com.sa:8200
-      service_name: nc-executor
-      environment: DEV
-      application_packages: sa.com.stc.nc.executor
-      log_level: CRITICAL
-      verify_server_cert: false
-      api_key: Zk9OamhJb0JNSkwtaFhsMmJ4Mnc6cFFHUUhjZ0JTR21mRENNNW9IeUhUUQ==
-
-    logstash:
-      host: sit-elastic.stc.com.sa
-      port: 5051
-      user: logstash_http
-      pass: cIqiGuzQudg3p-202309
+  logstash:
+    host: sit-elastic.stc.com.sa
+    port: 5051
+    user: logstash_http
+    pass: cIqiGuzQudg3p-202309
 
 # Autoscaling configuration
 replicaCount: 1
