@@ -1,0 +1,179 @@
+docker:
+  registry: cicd-tooling-ce.stc.com.sa
+  image:
+    pullSecret: cicd-ce-dockerhub
+    path: stc/nc/microservices/nc-executor
+    version: latest
+    imagePullPolicy: Always
+    fluentdpath: stc/b2c/microservices/fluent-bit
+    fluentdversion: latest
+  container:
+    port: 8080
+    targetPort: 8080
+kubernetes:
+  deployment:
+    version: PLACEHOLDER_VERSION
+    versionFormatted: PLACEHOLDER_FORMATTED_VERSION
+    description: api-exposure-searching-nc-executor
+  namespace: nc-ce-dev
+  resources:
+    limits:
+      memory: 1000Mi
+      cpu: 1000m
+    requests:
+      memory: 300Mi
+      cpu: 250m
+  service:
+    type: ClusterIP
+    protocol: TCP
+    name: 8080-tcp
+  ingress:
+    endpoint: nc-executor-nc-ce-dev.apps.ocp-dev2.stc.com.sa
+    termination: edge
+fluentbitconf:
+  host: elasticsearch.elastic-app-logging.svc.cluster.local
+  port: 9200
+
+sidecar:
+  jaegertracing: false
+  istio: false
+application:
+  name: nc-executor
+management:
+  server:
+    port: 8080
+    livenessProbe:
+      initialDelaySeconds: 60
+      periodSeconds: 60
+    readinessProbe:
+      periodSeconds: 60
+      timeoutSeconds: 120
+  endpoints:
+    web:
+      include: health
+binder:
+  configuration:
+    commit_interval_ms: 100
+
+config:
+  application:
+    security:
+      exclusions: /v3/api-docs/**, /swagger*/**, /actuator/**
+  spring:
+    threads:
+      virtual:
+        enabled: true
+    mail:
+      host: 212.118.156.124
+    application:
+      name: executor
+    datasource:
+      driverClassName: com.mysql.cj.jdbc.Driver
+      username: user
+      password: password
+      url: jdbc:mysql://ip:port/db
+      hikari:
+        idle_timeout: 10000
+        minimum_idle: 0
+    kafka:
+      error-handler: kafkaErrorHandler
+      bootstrap_servers: http://10.23.51.48:9091,10.23.51.48:9092,10.23.51.62:9091,10.23.51.62:9092,10.23.51.49:9091,10.23.51.49:9092,10.23.58.52:9091,10.23.58.52:9092
+      properties:
+        schema:
+          registry:
+            key: schema.registry.url
+            url: http://10.23.51.77:8091,10.23.58.35:8091
+      consumer:
+        group_id: notification_consumer
+        max-poll-records: 10
+        auto-commit: false
+        avro-reader-flag: true
+        properties:
+          logging:
+            enabled: true
+      auto-offset-reset: latest
+      producer:
+        properties:
+          auto-register-schema: false
+          logging:
+            enabled: false
+          topics-name:
+            pn:
+              backend-response-success: stc.nc.queing.response.ackpn
+              backend-response-failed: stc.nc.queing.error.ackpn-dlq
+            sms:
+              backend-response-success: stc.nc.queing.response.acksms
+              backend-response-failed: stc.nc.queing.error.acksms-dlq
+            validation:
+              rejected-reason: stc.nc.queing.reject
+
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5Dialect
+  security:
+    user:
+      name: msuser
+      password: password
+  management:
+    health:
+    info.git.mode: full
+    endpoints:
+      web.exposure.include: health, metrics, info
+    endpoint:
+      health.show.details: always
+    metrics:
+      distribution:
+        percentiles-histogram:
+          http.server.requests: true
+  springdoc:
+    api-docs:
+      enabled: true
+    swagger-ui:
+      enabled: true
+  enable:
+    ms-authorization:
+      filter: true
+  logging:
+    level:
+      sa.com.stc.bau.framework.filter.LoggingFilter: DEBUG
+      com_stc: DEBUG
+  webclient:
+    sms:
+      baseUri: http://172.20.150.69:9500/smsgw/sendSMS
+      connectTimeout: 30s # in seconds
+    pn:
+      baseUri: http://172.20.150.69:9700/dngw/sendPushNotify
+      connectTimeout: 30s # in seconds
+    retry:
+      backoffDelay: 30s # in seconds
+      maxAttempts: 3
+  elastic:
+    apm:
+      enabled: true
+      server_url: https://sit-elastic.stc.com.sa:8200
+      service_name: nc-executor
+      environment: DEV
+      application_packages: sa.com.stc.nc.executor
+      log_level: CRITICAL
+      verify_server_cert: false
+      api_key: Zk9OamhJb0JNSkwtaFhsMmJ4Mnc6cFFHUUhjZ0JTR21mRENNNW9IeUhUUQ==
+
+    logstash:
+      host: sit-elastic.stc.com.sa
+      port: 5051
+      user: logstash_http
+      pass: cIqiGuzQudg3p-202309
+
+# Autoscaling configuration
+replicaCount: 1
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
