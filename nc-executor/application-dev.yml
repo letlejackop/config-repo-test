@@ -50,10 +50,10 @@ spring:
 
 webclient:
   sms:
-    baseUri: http://172.20.150.69:9500/smsgw/sendSMS
+    baseUri: http://localhost:9500/smsgw/sendSMS
     connectTimeout: 10s # in seconds
   pn:
-    baseUri: http://172.20.150.69:9700/dngw/sendPushNotify
+    baseUri: http://localhost:9700/dngw/sendPushNotify
     connectTimeout: 10s # in seconds
   retry:
     backoffDelay: 1s # in seconds
