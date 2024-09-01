@@ -44,7 +44,7 @@ spring:
             backend-response-success: stc.nc.queing.response.acksms
             backend-response-failed: stc.nc.queing.error.acksms-dlq
           validation:
-            rejected-reason: stc.nc.queing.reject
+            rejected-reason: '{cipher}0bb47e2aa6c22ec54166adb0d296c1e4ea18d6ffb3a9e5b174fed2a7d5b1b4c9ab29a70f8bc954edfb4accdecbf675cb'
 
 webclient:
   sms:
