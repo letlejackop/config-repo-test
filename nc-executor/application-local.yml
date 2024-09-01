@@ -16,7 +16,7 @@ spring:
 
   kafka:
     error-handler: kafkaErrorHandler
-    bootstrap-servers: '{chipher}139b566f22ca2f881401317facb746c2433252143c36fd43a4a55f0b01128aa9'
+    bootstrap-servers: '{cipher}139b566f22ca2f881401317facb746c2433252143c36fd43a4a55f0b01128aa9'
     properties:
       schema:
         registry:
